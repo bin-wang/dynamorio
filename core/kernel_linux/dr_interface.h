@@ -40,8 +40,10 @@
 void
 dynamorio_app_init_part_one_options(void);
 
-/* Temporary heap-init stage; call after options initialization. */
+/* Temporary kernel implementation of part two through modules_init();
+ * call after options initialization.
+ */
 void
-kernel_heap_init_scaffolding(void);
+kernel_app_init_part_two_partial(void);
 
 #endif /* _DR_INTERFACE_H_ */

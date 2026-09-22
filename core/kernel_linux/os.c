@@ -38,6 +38,7 @@
 
 #include "globals.h"
 #include "kernel_interface.h"
+#include "module_shared.h"
 
 /* Kernel code has no standard streams of its own. These synthetic handles use
  * conventional descriptor numbers for compatibility with shared DR code.
@@ -60,6 +61,12 @@ assert_not_ported(const char *file, int line, const char *func)
 #else
     os_terminate(NULL, 0);
 #endif
+}
+
+void
+os_modules_init(void)
+{
+    /* No OS-specific module-list initialization, as in core/unix/module.c. */
 }
 
 ushort
@@ -404,11 +411,20 @@ os_check_option_compatibility(void)
     FORCE_OPTION_VALUE(reachable_heap, true);
 #endif
 
-    /* vm_size cannot exceed the heap region reserved at module load. DR's default vm_size
-     * is far larger than any reasonable kernel budget, so we need to clamp it down.
+    /* Use page-sized VMM blocks so placing vmcode in the page-aligned module heap
+     * does not require an extra block for alignment. Custom block sizes are not
+     * supported by the kernel port yet.
      */
-    if (DYNAMO_OPTION(vm_size) > kernel_get_heap_size()) {
-        dynamo_options.vm_size = kernel_get_heap_size();
+    FORCE_OPTION_VALUE(vmm_block_size, PAGE_SIZE);
+
+    /* Clamp within the heap reserved at module load so rounding vm_size up in
+     * vmm_heap_unit_init() cannot exceed the heap capacity. The VMM bitmap also
+     * requires a whole number of bitmap elements, each tracking BITMAP_DENSITY blocks.
+     */
+    size_t max_vm_size =
+        ALIGN_BACKWARD(kernel_get_heap_size(), PAGE_SIZE * BITMAP_DENSITY);
+    if (DYNAMO_OPTION(vm_size) > max_vm_size) {
+        dynamo_options.vm_size = max_vm_size;
         changed_options = true;
     }
 
