@@ -396,6 +396,7 @@ if (UNIX)
     unix/pcprofile.c
     unix/stackdump.c
     unix/diagnost.c
+    unix/notify.c
     unix/loader.c
     )
   if (LINUX)
@@ -472,6 +473,7 @@ else (UNIX)
   set(OSNAME win32)
   set(OS_SRCS
     win32/eventlog.c
+    win32/notify.c
     win32/os.c
     win32/syscall.c
     win32/callback.c

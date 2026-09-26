@@ -1858,17 +1858,6 @@ d_r_print_log(file_t logfile, uint mask, uint level, const char *fmt, ...)
     KSTOP_NOT_PROPAGATED(logging);
 }
 
-#ifdef WINDOWS
-static void
-do_syslog(syslog_event_type_t priority, uint message_id, uint substitutions_num, ...)
-{
-    va_list ap;
-    va_start(ap, substitutions_num);
-    os_syslog(priority, message_id, substitutions_num, ap);
-    va_end(ap);
-}
-#endif
-
 /* notify present a notification message to one or more destinations,
  * depending on the runtime parameters and the priority:
  *   -syslog_mask controls sending to the system log
@@ -1903,22 +1892,13 @@ d_r_notify(syslog_event_type_t priority, bool internal, bool synch,
         synchronize_dynamic_options(); /* TODO: dynamic THREAD mask */
     LOG(THREAD_GET, LOG_ALL, 1, "%s: %s\n", prefix, msgbuf);
 
-#ifdef WINDOWS
-    if (TESTANY(priority, dynamo_options.syslog_mask)) {
-        if (internal) {
-            if (TESTANY(priority, INTERNAL_OPTION(syslog_internal_mask))) {
-                do_syslog(priority, message_id, 3, get_application_name(),
-                          get_application_pid(), msgbuf);
-            }
-        } else {
-            va_start(ap, fmt);
-            os_syslog(priority, message_id, substitution_num, ap);
-            va_end(ap);
-        }
-    }
-#else
-    /* syslog not yet implemented on linux, XXX */
-#endif
+    /* The formatter consumed the first argument list. Windows event logging needs
+     * fresh substitutions as well as the formatted message.
+     */
+    va_start(ap, fmt);
+    os_notify_syslog(priority, internal, IF_WINDOWS_ELSE(message_id, 0), substitution_num,
+                     msgbuf, ap);
+    va_end(ap);
 
     if (TESTANY(priority, dynamo_options.stderr_mask))
         print_file(STDERR, "<%s>\n", msgbuf);
