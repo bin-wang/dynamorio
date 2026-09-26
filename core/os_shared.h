@@ -424,6 +424,9 @@ os_notify_syslog(syslog_event_type_t priority, bool internal, uint message_id,
 void
 os_notify_messagebox(char *message);
 
+void
+os_notify_set_title(void);
+
 /* Note that this is NOT identical to module_handle_t: on Linux this
  * is a pointer to a loader data structure and NOT the base address
  * (xref PR 366195).

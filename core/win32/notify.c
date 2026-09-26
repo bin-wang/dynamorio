@@ -75,3 +75,9 @@ os_notify_messagebox(char *message)
      */
     debugbox(message);
 }
+
+void
+os_notify_set_title(void)
+{
+    debugbox_setup_title();
+}

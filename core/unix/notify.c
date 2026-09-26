@@ -67,3 +67,9 @@ os_notify_messagebox(char *message)
         os_read(STDIN, &keypress, sizeof(keypress));
     }
 }
+
+void
+os_notify_set_title(void)
+{
+    /* Unix has no notification window title. */
+}

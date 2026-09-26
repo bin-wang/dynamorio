@@ -2048,9 +2048,7 @@ set_exception_strings(const char *override_label, const char *override_url)
     snprintf(client_exception_prefix, BUFFER_SIZE_ELEMENTS(client_exception_prefix),
              "%s %s at PC " PFX, exception_label_client, CRASH_NAME, 0);
     NULL_TERMINATE_BUFFER(client_exception_prefix);
-#ifdef WINDOWS
-    debugbox_setup_title();
-#endif
+    os_notify_set_title();
     if (dynamo_initialized)
         SELF_PROTECT_DATASEC(DATASEC_RARELY_PROT);
 }
