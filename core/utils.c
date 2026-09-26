@@ -1903,30 +1903,8 @@ d_r_notify(syslog_event_type_t priority, bool internal, bool synch,
     if (TESTANY(priority, dynamo_options.stderr_mask))
         print_file(STDERR, "<%s>\n", msgbuf);
 
-    if (TESTANY(priority, dynamo_options.msgbox_mask)) {
-#ifdef WINDOWS
-        /* XXX: could use os_countdown_msgbox (if ever implemented) here to
-         * do a timed out messagebox, could then also replace the os_timeout in
-         * vmareas.c
-         */
-        debugbox(msgbuf);
-#else
-        /* i#116/PR 394985: this won't work for apps that are
-         * themselves reading from stdin, but this is a simple way to
-         * pause and continue, allowing gdb to attach
-         */
-        if (DYNAMO_OPTION(pause_via_loop)) {
-            while (DYNAMO_OPTION(pause_via_loop)) {
-                /* infinite loop */
-                os_thread_yield();
-            }
-        } else {
-            char keypress;
-            print_file(STDERR, "<press enter to continue>\n");
-            os_read(STDIN, &keypress, sizeof(keypress));
-        }
-#endif
-    }
+    if (TESTANY(priority, dynamo_options.msgbox_mask))
+        os_notify_messagebox(msgbuf);
 }
 
 /****************************************************************************

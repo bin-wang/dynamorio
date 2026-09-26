@@ -65,3 +65,13 @@ os_notify_syslog(syslog_event_type_t priority, bool internal, uint message_id,
         }
     }
 }
+
+void
+os_notify_messagebox(char *message)
+{
+    /* XXX: could use os_countdown_msgbox (if ever implemented) here to
+     * do a timed out messagebox, could then also replace the os_timeout in
+     * vmareas.c
+     */
+    debugbox(message);
+}

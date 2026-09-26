@@ -415,11 +415,14 @@ os_syslog(syslog_event_type_t priority, uint message_id, uint substitutions_num,
 /* Notification destinations. The argument list is fresh (not consumed by message
  * formatting); implementations must not retain it. Event IDs and substitution counts
  * are used by Windows and ignored on Unix. Mask checks for the system log belong to
- * os_notify_syslog().
+ * os_notify_syslog(); the caller checks msgbox_mask before os_notify_messagebox().
  */
 void
 os_notify_syslog(syslog_event_type_t priority, bool internal, uint message_id,
                  uint substitution_num, const char *message, va_list args);
+
+void
+os_notify_messagebox(char *message);
 
 /* Note that this is NOT identical to module_handle_t: on Linux this
  * is a pointer to a loader data structure and NOT the base address

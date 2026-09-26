@@ -48,3 +48,22 @@ os_notify_syslog(syslog_event_type_t priority, bool internal, uint message_id,
      * do not call os_syslog(), whose Unix implementation asserts.
      */
 }
+
+void
+os_notify_messagebox(char *message)
+{
+    /* i#116/PR 394985: this won't work for apps that are
+     * themselves reading from stdin, but this is a simple way to
+     * pause and continue, allowing gdb to attach
+     */
+    if (DYNAMO_OPTION(pause_via_loop)) {
+        while (DYNAMO_OPTION(pause_via_loop)) {
+            /* infinite loop */
+            os_thread_yield();
+        }
+    } else {
+        char keypress;
+        print_file(STDERR, "<press enter to continue>\n");
+        os_read(STDIN, &keypress, sizeof(keypress));
+    }
+}
