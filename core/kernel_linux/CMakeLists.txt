@@ -71,6 +71,8 @@ set(dynamorio_module_sources
   ../synch.c
   ../translate.c
   ../utils.c
+  # Preserve the existing Unix notification destinations in the kernel build.
+  ../unix/notify.c
   ../vmareas.c
 
   # core/ir/

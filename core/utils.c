@@ -1858,17 +1858,6 @@ d_r_print_log(file_t logfile, uint mask, uint level, const char *fmt, ...)
     KSTOP_NOT_PROPAGATED(logging);
 }
 
-#ifdef WINDOWS
-static void
-do_syslog(syslog_event_type_t priority, uint message_id, uint substitutions_num, ...)
-{
-    va_list ap;
-    va_start(ap, substitutions_num);
-    os_syslog(priority, message_id, substitutions_num, ap);
-    va_end(ap);
-}
-#endif
-
 /* notify present a notification message to one or more destinations,
  * depending on the runtime parameters and the priority:
  *   -syslog_mask controls sending to the system log
@@ -1903,50 +1892,19 @@ d_r_notify(syslog_event_type_t priority, bool internal, bool synch,
         synchronize_dynamic_options(); /* TODO: dynamic THREAD mask */
     LOG(THREAD_GET, LOG_ALL, 1, "%s: %s\n", prefix, msgbuf);
 
-#ifdef WINDOWS
-    if (TESTANY(priority, dynamo_options.syslog_mask)) {
-        if (internal) {
-            if (TESTANY(priority, INTERNAL_OPTION(syslog_internal_mask))) {
-                do_syslog(priority, message_id, 3, get_application_name(),
-                          get_application_pid(), msgbuf);
-            }
-        } else {
-            va_start(ap, fmt);
-            os_syslog(priority, message_id, substitution_num, ap);
-            va_end(ap);
-        }
-    }
-#else
-    /* syslog not yet implemented on linux, XXX */
-#endif
+    /* The formatter consumed the first argument list. Windows event logging needs
+     * fresh substitutions as well as the formatted message.
+     */
+    va_start(ap, fmt);
+    os_notify_syslog(priority, internal, IF_WINDOWS_ELSE(message_id, 0), substitution_num,
+                     msgbuf, ap);
+    va_end(ap);
 
     if (TESTANY(priority, dynamo_options.stderr_mask))
         print_file(STDERR, "<%s>\n", msgbuf);
 
-    if (TESTANY(priority, dynamo_options.msgbox_mask)) {
-#ifdef WINDOWS
-        /* XXX: could use os_countdown_msgbox (if ever implemented) here to
-         * do a timed out messagebox, could then also replace the os_timeout in
-         * vmareas.c
-         */
-        debugbox(msgbuf);
-#else
-        /* i#116/PR 394985: this won't work for apps that are
-         * themselves reading from stdin, but this is a simple way to
-         * pause and continue, allowing gdb to attach
-         */
-        if (DYNAMO_OPTION(pause_via_loop)) {
-            while (DYNAMO_OPTION(pause_via_loop)) {
-                /* infinite loop */
-                os_thread_yield();
-            }
-        } else {
-            char keypress;
-            print_file(STDERR, "<press enter to continue>\n");
-            os_read(STDIN, &keypress, sizeof(keypress));
-        }
-#endif
-    }
+    if (TESTANY(priority, dynamo_options.msgbox_mask))
+        os_notify_messagebox(msgbuf);
 }
 
 /****************************************************************************
@@ -2090,9 +2048,7 @@ set_exception_strings(const char *override_label, const char *override_url)
     snprintf(client_exception_prefix, BUFFER_SIZE_ELEMENTS(client_exception_prefix),
              "%s %s at PC " PFX, exception_label_client, CRASH_NAME, 0);
     NULL_TERMINATE_BUFFER(client_exception_prefix);
-#ifdef WINDOWS
-    debugbox_setup_title();
-#endif
+    os_notify_set_title();
     if (dynamo_initialized)
         SELF_PROTECT_DATASEC(DATASEC_RARELY_PROT);
 }
