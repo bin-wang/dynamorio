@@ -1546,9 +1546,13 @@ main()
     if (register_rseq()) {
 #ifdef RSEQ_TEST_ATTACH
         /* Set -offline to avoid trying to open a pipe to a missing reader. */
-        if (setenv("DYNAMORIO_OPTIONS",
-                   "-stderr_mask 0xc -client_lib ';;-offline -max_trace_size 256K'",
-                   1 /*override*/) != 0)
+        /* DIAG: allow extra DR options (e.g., logging) via RSEQ_DIAG_OPS. */
+        static char diag_ops[2048];
+        const char *extra = getenv("RSEQ_DIAG_OPS");
+        snprintf(diag_ops, sizeof(diag_ops),
+                 "-stderr_mask 0xc %s -client_lib ';;-offline -max_trace_size 256K'",
+                 extra == NULL ? "" : extra);
+        if (setenv("DYNAMORIO_OPTIONS", diag_ops, 1 /*override*/) != 0)
             return 1;
         /* Create a thread that sits in the rseq region, to test attaching and detaching
          * from inside the region.

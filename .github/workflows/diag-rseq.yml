@@ -1,0 +1,55 @@
+# DIAG (temporary): investigate api.rseq/api.rseq_splitvma
+# "Failed to synchronize with all threads when detaching" on AMD Zen4/5 runners.
+name: diag-rseq
+on:
+  push:
+    branches:
+      - diag-rseq-synch
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  diag:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: CPU info
+      run: |
+        grep -m1 "model name" /proc/cpuinfo; nproc; uname -a
+
+    - name: Install deps
+      run: |
+        sudo apt update
+        sudo apt-get -y install zlib1g-dev libsnappy-dev liblz4-dev libunwind-dev gdb bc
+        echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+
+    - name: Build
+      run: |
+        mkdir build && cd build
+        cmake -DDEBUG=ON -DINTERNAL=ON -DBUILD_TESTS=ON -DBUILD_DOCS=OFF \
+          -DBUILD_SAMPLES=OFF ..
+        make -j$(nproc) api.rseq api.rseq_splitvma
+
+    - name: Run diag loop
+      run: N=5 bash .github/diag/run_rseq_diag.sh
+
+    - name: Package results
+      if: always()
+      run: tar czf diag-out-${{ matrix.shard }}.tgz diag-out || true
+
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: diag-out-${{ matrix.shard }}
+        path: diag-out-${{ matrix.shard }}.tgz
