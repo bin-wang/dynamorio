@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
     - uses: actions/checkout@v4
       with:
@@ -42,7 +42,7 @@ jobs:
         make -j$(nproc) api.rseq api.rseq_splitvma
 
     - name: Run diag loop
-      run: N=5 bash .github/diag/run_rseq_diag.sh
+      run: N=6 bash .github/diag/run_rseq_diag2.sh
 
     - name: Package results
       if: always()
