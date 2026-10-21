@@ -1398,6 +1398,8 @@ rseq_thread_loop(void *arg)
          * synch to not reach here natively before DR attaches.  Decided against it.
          */
         "movl $1, %[zero]\n\t"
+        /* DIAG: app nop so the loop has a translatable non-store app instr. */
+        "nop\n\t"
         "jmp 2b\n\t"
         /* We can't end the sequence in a branch (DR can't handle it). */
         "nop\n\t"

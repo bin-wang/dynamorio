@@ -42,7 +42,7 @@ jobs:
         make -j$(nproc) api.rseq api.rseq_splitvma
 
     - name: Run diag loop
-      run: N=6 bash .github/diag/run_rseq_diag2.sh
+      run: N=10 bash .github/diag/run_rseq_diag3.sh
 
     - name: Package results
       if: always()
