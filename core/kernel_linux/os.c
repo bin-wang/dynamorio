@@ -771,3 +771,25 @@ diagnost_exit(void)
 {
     /* No-op in kernel mode. */
 }
+
+
+void
+os_tls_init(void)
+{
+    /* Nothing to do here.  TLS in the kernel is static per-CPU storage.
+     * It is allocated on module load and verified in d_r_os_init().
+     * TODO i#8021: Add os_tls_exit() in the kernel build that clears this storage,
+     * so a later session won't see a stale dcontext in is_thread_initialized().
+     */
+}
+
+void
+os_thread_init(dcontext_t *dcontext, void *os_data)
+{
+    /* The kernel build passes no OS-specific data. */
+    ASSERT(os_data == NULL);
+    /* TODO i#8021: When the per-CPU syscall entry stub is ported, allocate a kernel
+     * os_thread_data_t here and save this CPU's native MSR_LSTAR, which
+     * arch_thread_init() needs as the stub's target. Takeover will add the native IDT.
+     */
+}
