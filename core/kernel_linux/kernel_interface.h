@@ -129,11 +129,32 @@ void
 kernel_walk_code_regions(kernel_memory_region_callback_t callback, void *arg);
 
 /* Returns whether the |size| bytes at |addr| can be read without faulting.  Handles both
- * kernel and user addresses.  Acquires no locks and never sleeps, so it is safe to call
- * in any context.  A zero |size| returns true.
+ * kernel and user addresses.  A user address is interpreted in the current task's
+ * address space.  Acquires no locks and never sleeps, so it is safe to call in any
+ * context.  A zero |size| returns true.
  */
 bool
 kernel_is_readable_without_fault(const void *addr, size_t size);
+
+/* Copies up to |size| bytes from |addr| to |out| without faulting and returns the
+ * number of bytes copied.  Handles both kernel and user addresses.  A user address is
+ * interpreted in the current task's address space.  Acquires no locks and never sleeps.
+ */
+size_t
+kernel_read_without_fault(const void *addr, size_t size, void *out);
+
+/* SPIKE */
+bool
+kernel_is_user_address(const void *addr);
+bool
+kernel_query_page(const void *addr, kernel_memory_region_t *region);
+/* Calls |fn|(|arg|) once on each online CPU, sequentially in ascending CPU ID order.
+ * Stops at the first nonzero return value and returns it, and returns 0 if every call
+ * succeeded. Each call runs in a kernel worker thread bound to that CPU.
+ * This function sleeps and must be called from sleepable context.
+ */
+int
+kernel_run_on_each_online_cpu(int (*fn)(void *), void *arg);
 
 unsigned int
 kernel_query_time_seconds(void);
